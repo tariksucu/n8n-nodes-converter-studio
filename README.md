@@ -48,7 +48,7 @@ Every conversion uses the account's credits, the same as on the website. Most fi
 1. Add **Converter Studio** after a node that outputs a file (for example **Read/Write Files from Disk**, **HTTP Request** with a file response, **Gmail** attachments or a **Form** upload).
 2. Choose **File > Convert**.
 3. **Source**: **Binary File** reads the file from **Input Binary Field** (`data` by default). **URL** lets Converter Studio download the file itself from **File URL**: a direct link, or a share link of Google Drive, Dropbox or OneDrive that anyone with the link can open.
-4. **Target Format**: the list shows every target format; for a URL with a file extension it shows only what that format converts to. You can also set it with an expression, for example `{{ $json.format }}` (`pdf`, `mp4`, `jpg`, …). If a binary file's format can't become the target, the node says what it converts to instead, before anything is charged.
+4. **Target Format**: for a URL with a file extension the list shows only what that format converts to. Where the editor can't know the file, it shows every target format, each marked "checked against the file when the node runs": a binary file, a link set by an expression that has no data yet, a link without a file extension, or a link an AI agent fills in. You can also set it with an expression, for example `{{ $json.format }}` (`pdf`, `mp4`, `jpg`, …). If a binary file's format can't become the target, the node says what it converts to instead, before anything is charged; for a link, Converter Studio checks once it has the file, and the conversion fails with a message that names both formats (nothing is charged).
 5. The output item has the conversion in its JSON and the converted file in **Put Output File in Field** (`data` by default).
 
 The output JSON (with **Simplify** on) has `id`, `status`, `from`, `to`, `credits`, `outputName`, `outputSize`, `downloadUrl`, `expiresAt` and `error`. Turn **Simplify** off for the full answer of the API. The `downloadUrl` works for anyone who has it until `expiresAt`: results are kept for 6 hours.
@@ -147,7 +147,16 @@ When n8n has no execution ID (for example when the node runs as a tool of an MCP
 
 ### As an AI agent tool
 
-The node can be used as a tool of the AI Agent node. Converting from a URL works best there, since the agent gets the `downloadUrl` of the result.
+The node can be used as a tool of the AI Agent node. Converting from a URL works best there, since the agent gets the `downloadUrl` of the result:
+
+1. Add **Converter Studio** in the agent's **Tool** slot and choose **File > Convert**, **Source: URL**.
+2. Set **File URL** to **Defined by agent** (the button next to the field). Optionally add a description for the model, for example _A direct link to the file, as the user gave it_.
+3. Choose the **Target Format** from the list. With the link left to the agent, the list has every target format; Converter Studio checks the pair when the tool runs.
+4. Turn **Download Result** off: the agent gets the tool's JSON (with `downloadUrl`), not the file.
+
+The tool's description is set automatically ("Convert a file in Converter Studio"). If the agent has several tools, or should know what the tool makes, set **Tool Description** to **Set Manually** and say it, for example _Converts the file at a link to PDF and returns a download link that works for 6 hours_.
+
+When a tool call fails, n8n gives the agent only the error's message, so as a tool the node puts the details into the message too. A file that can't become the target format fails with a message that names what it converts to (for example _We can't convert docx to mp3 yet. Details: DOCX converts to: doc, epub, html, …_), and the agent can tell the user or, if it sets the format itself (an expression with `$fromAI`), choose again.
 
 ## Example workflows
 
@@ -161,7 +170,7 @@ The node can be used as a tool of the AI Agent node. Converting from a URL works
 
 ## Compatibility
 
-Built with n8n's node CLI (`@n8n/node-cli` 0.57). Tested in a running self-hosted n8n 2.48.7, installed from the packed package the way Community Nodes installs it: the node picker, the credential test, the option lists, use as an AI Agent tool, and executions of every operation, with n8n's binary data on disk, in the database and in memory (a 119 MB file went up in two parts). Also tried there: the Callback URL recipe (a 40-second 1080p video to WebM; workflow A ended at once, workflow B's Webhook was called about 50 seconds later and Conversion > Get downloaded the 32 MB result), and Retry On Fail (a 10-second timeout on the same video: four tries, one upload, one conversion, the last three answered as repeats). The package has no runtime dependencies.
+Built with n8n's node CLI (`@n8n/node-cli` 0.57). Tested in a running self-hosted n8n 2.48.7, installed from the packed package the way Community Nodes installs it: the node picker, the credential test, the option lists, use as an AI Agent tool, and executions of every operation, with n8n's binary data on disk, in the database and in memory (a 119 MB file went up in two parts). Also tried there: the Callback URL recipe (a 40-second 1080p video to WebM; workflow A ended at once, workflow B's Webhook was called about 50 seconds later and Conversion > Get downloaded the 32 MB result), and Retry On Fail (a 10-second timeout on the same video: four tries, one upload, one conversion, the last three answered as repeats). Version 0.1.1 was checked in n8n 2.48.7 too: the Target Format list in the editor (a link, a changed link, expressions, File URL "Defined by agent" on the tool) and an AI Agent with a local model (Ollama, Qwen3 4B Instruct) calling the tool, once for a conversion and once for one the file can't make. The package has no runtime dependencies.
 
 ## Privacy
 
@@ -184,6 +193,10 @@ Releases are published to npm by this repository's GitHub Actions workflow (`.gi
 - Support: [support@converter.studio](mailto:support@converter.studio), or [open an issue](https://github.com/tariksucu/n8n-nodes-converter-studio/issues)
 
 ## Version history
+
+### 0.1.1
+
+As an AI Agent tool, with File URL "Defined by agent", the Target Format list loads (every target format) instead of showing "Error fetching options"; the same where the editor can't know the file. As a tool, error messages carry their details, and an impossible conversion names what the file converts to.
 
 ### 0.1.0
 

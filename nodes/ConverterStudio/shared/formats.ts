@@ -47,7 +47,10 @@ export function formatOptions(formats: FormatView[]): INodePropertyOptions[] {
 		.sort(byName);
 }
 
-/** The target formats: what `from` converts to, or every target when the source isn't known. */
+/**
+ * The target formats: what `from` converts to, or every target when the source isn't known (each
+ * one then says that the pair is checked when the node runs).
+ */
 export function targetOptions(formats: FormatView[], from?: FormatView): INodePropertyOptions[] {
 	const known = new Map(formats.map((format) => [format.id, format]));
 	const targets = new Set(from ? from.to : formats.flatMap((format) => format.to));
@@ -60,10 +63,25 @@ export function targetOptions(formats: FormatView[], from?: FormatView): INodePr
 				value: id,
 				description: from
 					? `${from.name} to ${format?.name ?? id.toUpperCase()}`
-					: `${category[0].toUpperCase()}${category.slice(1)}`,
+					: `${category[0].toUpperCase()}${category.slice(1)}, checked against the file when the node runs`,
 			};
 		})
 		.sort(byName);
+}
+
+/**
+ * The source format the editor can see: that of a link in 'File URL' (written out, or an
+ * expression the editor resolved). A binary file, an expression the editor can't resolve yet (it
+ * arrives as `null`, or unresolved) and a link an AI agent fills in at run time (`$fromAI`) have
+ * none.
+ */
+export function editorSource(
+	source: unknown,
+	url: unknown,
+	formats: FormatView[],
+): FormatView | undefined {
+	if (source !== 'url' || typeof url !== 'string' || url.startsWith('=')) return undefined;
+	return formatOfName(url, formats);
 }
 
 export async function getTargetFormats(
@@ -72,13 +90,13 @@ export async function getTargetFormats(
 	const formats = await listFormats.call(this);
 	let from: FormatView | undefined;
 	try {
-		const source = this.getCurrentNodeParameter('source');
-		const url = this.getCurrentNodeParameter('url');
-		if (source === 'url' && typeof url === 'string' && !url.startsWith('=')) {
-			from = formatOfName(url, formats);
-		}
+		from = editorSource(
+			this.getCurrentNodeParameter('source'),
+			this.getCurrentNodeParameter('url'),
+			formats,
+		);
 	} catch {
-		// The parameters aren't set yet: show every target.
+		// The parameters can't be read: every target.
 	}
 	return targetOptions(formats, from);
 }

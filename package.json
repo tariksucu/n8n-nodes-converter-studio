@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-converter-studio",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Convert video, audio, images, PDFs, documents, e-books, subtitles, data and archives (67 formats) in n8n with the Converter Studio API.",
 	"license": "MIT",
 	"publishConfig": {

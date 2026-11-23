@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- File > Convert as an AI Agent tool: with **File URL** "Defined by agent", the **Target Format** list showed "Error fetching options from Converter Studio Tool", because n8n's editor can't resolve a value the agent fills in only when it runs. The list now loads there with every target format, as it does whenever the editor can't know the file (a binary file, a link set by an expression that has no data yet, a link without a file extension); each format then says it is checked against the file when the node runs. A link written out still narrows the list to what its format converts to, as before.
+- As an AI Agent tool, an error's message also carries the details under it (n8n gives the agent only the message), and a conversion the file can't make names what the file converts to, so the agent can choose again.
+
 ## 0.1.0
 
 First release.

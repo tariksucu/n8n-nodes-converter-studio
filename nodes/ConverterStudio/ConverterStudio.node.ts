@@ -70,6 +70,8 @@ export class ConverterStudio implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 		/** What each source format converts to, asked once per run. */
 		const targets = new Map<string, Promise<FormatView[]>>();
+		/** As an AI agent's tool, n8n runs the node as 'converterStudioTool' (n8n's own '@tool' test). */
+		const isTool = this.getNode().type.endsWith('Tool');
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -173,6 +175,7 @@ export class ConverterStudio implements INodeType {
 				}
 				returnData.push(item);
 			} catch (error) {
+				if (isTool) await explainToAgent.call(this, error, i);
 				if (this.continueOnFail()) {
 					const context = (error as { context?: IDataObject }).context ?? {};
 					// Only 'error', 'message' and 'details' at the top: n8n sends such an item to the
@@ -293,6 +296,34 @@ async function startConversion(
 			throw new NodeOperationError(this.getNode(), error, { itemIndex: i });
 		}
 		throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
+	}
+}
+
+/**
+ * For an AI agent, whose model gets only an error's message (n8n's AI Agent leaves out the
+ * description under it): the message gets that description, and a conversion the file can't make
+ * says what the file converts to instead, so the agent can choose again. The message itself stays
+ * Converter Studio's (or the node's) own.
+ */
+async function explainToAgent(this: IExecuteFunctions, error: unknown, i: number): Promise<void> {
+	if (!(error instanceof Error)) return;
+	const { description, context } = error as Error & {
+		description?: string | null;
+		context?: IDataObject;
+	};
+	let details = description ?? undefined;
+	const params = context?.converterStudioParams as IDataObject | undefined;
+	const from = params?.from;
+	if (codeOf(error) === 'unsupportedConversion' && typeof from === 'string' && from !== 'unknown') {
+		try {
+			const format = (await listFormats.call(this, from, i)).find((entry) => entry.id === from);
+			if (format) details = `${format.name} converts to: ${format.to.join(', ')}.`;
+		} catch {
+			// Without the list the agent still gets the message and its hint.
+		}
+	}
+	if (details && !error.message.includes(details)) {
+		error.message = `${error.message}\n\nDetails: ${details}`;
 	}
 }
 

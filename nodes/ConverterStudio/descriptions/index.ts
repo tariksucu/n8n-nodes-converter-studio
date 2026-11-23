@@ -230,13 +230,18 @@ const fileConvert: INodeProperties[] = [
 		type: 'options',
 		typeOptions: {
 			loadOptionsMethod: 'getTargetFormats',
-			loadOptionsDependsOn: ['source', 'url'],
+			// '&url' is the sibling parameter 'url' (at the top level, 'url' itself): the list reloads
+			// when the link changes. Named plainly, n8n's editor must resolve 'url' before it asks for
+			// the list, and shows "Error fetching options" when it can't: a link the AI agent fills in
+			// ($fromAI), or an expression without data yet. Named so, such a link reaches
+			// getTargetFormats as null, and the list has every target format.
+			loadOptionsDependsOn: ['source', '&url'],
 		},
 		default: '',
 		required: true,
 		displayOptions: show('file', ['convert']),
 		description:
-			'The format to convert the file to. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			'The format to convert the file to. For a link with a file extension the list has only what that format converts to; otherwise (a binary file, or a link set by an expression or by the AI agent) it has every target format, and the pair is checked when the node runs. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 	},
 	{
 		displayName: 'Max Credits',

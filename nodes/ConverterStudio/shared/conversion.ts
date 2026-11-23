@@ -161,6 +161,7 @@ export function conversionFailed(
 		itemIndex,
 	});
 	error.context.converterStudioCode = view.error?.code;
+	if (view.error?.params) error.context.converterStudioParams = view.error.params;
 	error.context.conversionId = view.id;
 	return error;
 }
