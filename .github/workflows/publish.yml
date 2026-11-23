@@ -1,0 +1,120 @@
+# Publishes this n8n community node package to npm on every version tag push.
+#
+# Starting May 1 2026, n8n requires all community nodes to be published via
+# GitHub Actions with npm provenance statements. This workflow satisfies that
+# requirement. Provenance lets anyone cryptographically verify that a package
+# was built by this exact workflow, from this exact repository and commit.
+#
+# ─── PREREQUISITES ─────────────────────────────────────────────────────────────
+#
+# @n8n/node-cli ≥ 0.23.0 is required. Earlier versions do not support the
+# provenance flag passed by `npm run release` in CI, and the publish step will
+# fail. Check the version installed in this project with:
+#
+#   npm list @n8n/node-cli
+#
+# npm trusted publishing needs Node.js 22.14.0+ and npm 11.5.1+, which the
+# steps below set up.
+#
+# ─── ONE-TIME SETUP ────────────────────────────────────────────────────────────
+#
+# First publish — npm token (a trusted publisher can only be added once the
+# package exists on npm):
+#   1. On npmjs.com: Access Tokens → Generate New Token → Granular Access Token,
+#      "Read and write", "Bypass two-factor authentication" on, short expiry.
+#   2. In GitHub: Settings → Secrets and variables → Actions → New repository
+#      secret named NPM_TOKEN, with the token as its value.
+#
+# Later publishes — OIDC trusted publishing (no long-lived secret):
+#   1. On npmjs.com, the package's Settings → Trusted Publisher → GitHub Actions:
+#        Repository owner: tariksucu
+#        Repository name:  n8n-nodes-converter-studio
+#        Workflow name:    publish.yml
+#        Environment:      (leave blank)
+#   2. Delete the NPM_TOKEN secret here and revoke the token on npm. Without
+#      the secret, npm authenticates with GitHub's OIDC token instead.
+#
+# Both ways publish with provenance (trusted publishing adds it by itself).
+#
+# ─── TAG CONVENTION ────────────────────────────────────────────────────────────
+#
+# Tags matching "*.*.*" start this workflow (0.2.0; v0.2.0 works too). The
+# tag, without a leading "v", must equal the version in package.json.
+#
+# ─── RELEASE PROCESS ───────────────────────────────────────────────────────────
+#
+# Change the version in package.json and the changelogs, commit, then:
+#
+#   git tag X.Y.Z && git push origin main X.Y.Z
+#
+# (`npm run release` does the same interactively with release-it.)
+
+name: Publish
+
+on:
+  push:
+    tags:
+      # Matches 0.1.0, 1.2.3, 2.0.0-rc.1, etc.
+      - '*.*.*'
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required to mint an OIDC token for npm provenance attestation.
+      id-token: write
+      # Scoped down from the default (write) for least-privilege publishing.
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Use npm 11.5.1 or newer (trusted publishing)
+        run: 'npm install --global npm@^11.5.1'
+
+      - name: Check that the tag is the package version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in package.json"
+            exit 1
+          fi
+
+      # Dependencies' install scripts are not needed, and none runs in a job
+      # that can publish.
+      - name: Install dependencies
+        run: 'npm ci --ignore-scripts'
+
+      # Unit tests with a mocked API: no network, no API key.
+      - name: Run tests
+        run: 'npm test'
+
+      - name: Release
+        # Runs lint and build, then publishes to npm with a provenance
+        # attestation (requires id-token: write above).
+        #
+        # With the NPM_TOKEN secret set (first publish), the token is written
+        # to the user's .npmrc. Without it, npm uses the OIDC exchange of a
+        # trusted publisher.
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
+          npm run release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

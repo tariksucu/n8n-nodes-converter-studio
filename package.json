@@ -1,0 +1,67 @@
+{
+	"name": "n8n-nodes-converter-studio",
+	"version": "0.1.0",
+	"description": "Convert video, audio, images, PDFs, documents, e-books, subtitles, data and archives (67 formats) in n8n with the Converter Studio API.",
+	"license": "MIT",
+	"homepage": "https://converter.studio",
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"converter-studio",
+		"file-converter",
+		"file-conversion",
+		"convert",
+		"pdf",
+		"video",
+		"image",
+		"audio",
+		"document"
+	],
+	"author": {
+		"name": "Converter Studio",
+		"email": "support@converter.studio"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/tariksucu/n8n-nodes-converter-studio.git"
+	},
+	"bugs": {
+		"url": "https://github.com/tariksucu/n8n-nodes-converter-studio/issues",
+		"email": "support@converter.studio"
+	},
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"dev": "n8n-node dev",
+		"lint": "n8n-node lint",
+		"lint:fix": "n8n-node lint --fix",
+		"test": "n8n-node build && node --test \"test/*.test.js\"",
+		"release": "n8n-node release",
+		"prepublishOnly": "n8n-node prerelease"
+	},
+	"files": [
+		"dist",
+		"!dist/tsconfig.tsbuildinfo"
+	],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/ConverterStudioApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/ConverterStudio/ConverterStudio.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "0.57.4",
+		"eslint": "9.32.0",
+		"n8n-workflow": "2.48.3",
+		"prettier": "3.10.1",
+		"release-it": "^21.1.0",
+		"typescript": "5.9.2"
+	},
+	"peerDependencies": {
+		"n8n-workflow": "*"
+	}
+}
