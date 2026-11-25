@@ -33,7 +33,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 You need a Converter Studio account and an API key:
 
-1. Sign in at [converter.studio](https://converter.studio) (a free account works; it gets 13 credits a day).
+1. Sign in at [converter.studio](https://converter.studio) (a free account works; it gets 25 credits a day).
 2. Open your [account page](https://converter.studio/account#api-keys) and create an API key. Keys start with `cvs_live_` and are shown once.
 3. In n8n, create a **Converter Studio API** credential and paste the key into **API Key**. Leave **Base URL** as it is (`https://converter.studio/api`); change it only to test against another Converter Studio server.
 
