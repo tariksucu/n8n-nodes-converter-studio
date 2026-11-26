@@ -194,6 +194,10 @@ Releases are published to npm by this repository's GitHub Actions workflow (`.gi
 
 ## Version history
 
+### 0.1.2
+
+README only: free accounts get 25 credits a day (it said 13).
+
 ### 0.1.1
 
 As an AI Agent tool, with File URL "Defined by agent", the Target Format list loads (every target format) instead of showing "Error fetching options"; the same where the editor can't know the file. As a tool, error messages carry their details, and an impossible conversion names what the file converts to.

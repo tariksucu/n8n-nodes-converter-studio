@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- README: free Converter Studio accounts get 25 credits a day (it said 13, the allowance before 2026-11-24). No change in behaviour.
+
 ## 0.1.1
 
 - File > Convert as an AI Agent tool: with **File URL** "Defined by agent", the **Target Format** list showed "Error fetching options from Converter Studio Tool", because n8n's editor can't resolve a value the agent fills in only when it runs. The list now loads there with every target format, as it does whenever the editor can't know the file (a binary file, a link set by an expression that has no data yet, a link without a file extension); each format then says it is checked against the file when the node runs. A link written out still narrows the list to what its format converts to, as before.
